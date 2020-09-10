@@ -83,6 +83,13 @@ AS_IF([test "x$enable_use_json" == "xyes"],
     AC_DEFINE([LED_USE_JSON],[],[Enable JSON configuration.])
 )
 
+# enable lamp test configuration
+AC_ARG_ENABLE([use-lampTest],
+    AS_HELP_STRING([--enable-use-lampTest], [Enable lamp test configuration.]))
+AS_IF([test "x$enable_use_lampTest" == "xyes"],
+    AC_DEFINE([LAMP_TEST],[],[Enable lamp test configuration.])
+)
+
 # Path of file for storing the names of asserted groups
 AC_ARG_VAR(SAVED_GROUPS_FILE, [Path of file for storing the names of asserted groups])
 AS_IF([test "x$SAVED_GROUPS_FILE" == "x"], [SAVED_GROUPS_FILE="/var/lib/phosphor-led-manager/savedGroups"])

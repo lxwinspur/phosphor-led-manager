@@ -250,43 +250,9 @@ void Manager::populateObjectMap()
     return;
 }
 
-void Manager::updateAssertedProperty(std::string path)
+void Manager::setLampTestStatus()
 {
-    constexpr auto BUSNAME = "xyz.openbmc_project.LED.GroupManager";
-    constexpr auto ASSERTED_INTF = "xyz.openbmc_project.Led.Group";
-    constexpr auto PROPERTY_NAME = "Asserted";
-    constexpr auto DBUS_PROPERTIES = "org.freedesktop.DBus.Properties";
-
-    assert(serialize != NULL);
-    bool assertedStatus = serialize->getGroupSavedState(path);
-
-    try
-    {
-        auto method =
-            bus.new_method_call(BUSNAME, path.c_str(), DBUS_PROPERTIES, "Set");
-        std::variant<bool> value = assertedStatus;
-        method.append(ASSERTED_INTF, PROPERTY_NAME, value);
-        bus.call_noreply(method);
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "failed to update Asserted property, ERROR=" << e.what()
-                  << "\n";
-    }
-}
-
-void Manager::setLampTestStatus(bool status)
-{
-    this->lampTestStatus = status;
-
-    if (!this->lampTestStatus)
-    {
-        // restore the indicator LED status
-        for (auto& ledLayout : ledMap)
-        {
-            updateAssertedProperty(ledLayout.first);
-        }
-    }
+    this->lampTestStatus = true;
 }
 
 bool Manager::getLampTestStatus()
@@ -294,7 +260,7 @@ bool Manager::getLampTestStatus()
     return this->lampTestStatus;
 }
 
-void Manager::listenLampTestEvent()
+void Manager::emitLampTestInitiatedSignal()
 {
     using namespace sdbusplus::bus::match::rules;
 
@@ -302,26 +268,30 @@ void Manager::listenLampTestEvent()
     using DbusProp = std::string;
     using DbusChangedProps = std::map<DbusProp, PropertyValue>;
 
-    constexpr auto LAMP_OBJECT_PATH = "";
-    constexpr auto LAMP_IFACE = "";
+    constexpr auto LAMP_OBJECT_PATH = "/xyz/openbmc_project/Led";
+    constexpr auto LAMP_IFACE = "xyz.openbmc_project.Led.LampTest";
+    constexpr auto LAMP_SIGNAL = "LampTestInitiated";
+
+    // Signal indicating that the Lamp test has been initiated
+    try
+    {
+        auto msg = bus.new_signal(LAMP_OBJECT_PATH, LAMP_IFACE, LAMP_SIGNAL);
+        msg.signal_send();
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Error emitting lamp test signal:"
+                  << "ERROR=" << e.what() << "\n";
+        return;
+    }
 
     auto lampTestMatch = std::make_unique<sdbusplus::bus::match::match>(
-        bus, propertiesChanged(LAMP_OBJECT_PATH, LAMP_IFACE),
-        [this](auto& msg) {
-            constexpr auto LAMP_PROPERTY_NAME = "";
-
-            DbusChangedProps props{};
-            std::string intf;
-            msg.read(intf, props);
-
-            const auto iter = props.find(LAMP_PROPERTY_NAME);
-            if (iter != props.end())
-            {
-                PropertyValue value = iter->second;
-                auto status = std::get<bool>(value);
-                this->setLampTestStatus(status);
-            }
-        });
+        bus,
+        sdbusRule::type::signal() + sdbusRule::member(LAMP_SIGNAL) +
+            sdbusRule::path(LAMP_OBJECT_PATH) +
+            sdbusRule::interface(LAMP_IFACE),
+        std::bind(std::mem_fn(&Manager::setLampTestStatus), this,
+                  std::placeholders::_1));
 }
 
 } // namespace led

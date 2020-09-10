@@ -88,7 +88,9 @@ class Manager
         ledMap(ledLayout),
         bus(bus), lampTestStatus(false), serialize(serialize)
     {
-        listenLampTestEvent();
+#ifdef LAMP_TEST
+        emitLampTestInitiatedSignal();
+#endif
     }
 
     /** @brief Given a group name, applies the action on the group
@@ -190,20 +192,13 @@ class Manager
     /** @brief Populates map of Physical LED paths to service name */
     void populateObjectMap();
 
-    /** @brief Update Asserted property of D-Bus
+    /** @brief Set lamp test status is ture: On
      *
-     *  @param[in]  path   -  dbus object path
      */
-    void updateAssertedProperty(std::string path);
+    void setLampTestStatus();
 
-    /** @brief Set lamp test status, ture: On, false: Off
-     *
-     *  @param[in]  status   -  Asserted property status
-     */
-    void setLampTestStatus(bool status);
-
-    /** @brief Subscribe Lamp test to sdbusplus event a registers handle */
-    void listenLampTestEvent();
+    /** @brief Subscribe Lamp test initiated signal */
+    void emitLampTestInitiatedSignal();
 };
 
 } // namespace led
