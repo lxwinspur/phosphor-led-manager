@@ -4,6 +4,8 @@
 #include "serialize.hpp"
 
 #include <sdbusplus/bus.hpp>
+#include <sdeventplus/event.hpp>
+#include <sdeventplus/utility/timer.hpp>
 
 #include <map>
 #include <set>
@@ -86,10 +88,12 @@ class Manager
     Manager(sdbusplus::bus::bus& bus, const LedLayout& ledLayout,
             Serialize* serialize = NULL) :
         ledMap(ledLayout),
-        bus(bus), lampTestStatus(false), serialize(serialize)
+        bus(bus), lampTestStatus(false), serialize(serialize),
+        event(sdeventplus::Event::get_default()),
+        timer(event, std::bind(&Manager::lampTestTimeout, this))
     {
 #ifdef LAMP_TEST
-        emitLampTestInitiatedSignal();
+        lampTestInitiated();
 #endif
     }
 
@@ -128,6 +132,12 @@ class Manager
 
     /** @brief The serialize class for storing and restoring groups of LEDs */
     Serialize* serialize;
+
+    /** @brief sdbusplus event */
+    const sdeventplus::Event& event;
+
+    /** @brief Timer used for host transition with seconds */
+    sdeventplus::utility::Timer<sdeventplus::ClockId::RealTime> timer;
 
     /** Map of physical LED path to service name */
     std::map<std::string, std::string> phyLeds{};
@@ -192,13 +202,14 @@ class Manager
     /** @brief Populates map of Physical LED paths to service name */
     void populateObjectMap();
 
-    /** @brief Set lamp test status is ture: On
-     *
-     */
-    void setLampTestStatus();
+    /** @brief  Call back the restore function when timeout. */
+    void lampTestTimeout();
+
+    /** @brief The handler method of lamp test */
+    void lampTestHandler(sdbusplus::message::message& msg);
 
     /** @brief Subscribe Lamp test initiated signal */
-    void emitLampTestInitiatedSignal();
+    void lampTestInitiated();
 };
 
 } // namespace led

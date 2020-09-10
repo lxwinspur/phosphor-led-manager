@@ -16,9 +16,11 @@ led-gen.hpp: ${srcdir}/parse_led.py
 endif
 
 phosphor_ledmanager_LDFLAGS = $(SDBUSPLUS_LIBS) \
+                              $(SDEVENTPLUS_LIBS) \
                               $(PHOSPHOR_LOGGING_LIBS) \
                               $(PHOSPHOR_DBUS_INTERFACES_LIBS)
 phosphor_ledmanager_CFLAGS =  $(SDBUSPLUS_CFLAGS) \
+                              $(SDEVENTPLUS_LIBS) \
                               $(PHOSPHOR_LOGGING_CFLAGS) \
                               $(PHOSPHOR_DBUS_INTERFACES_CFLAGS)
 

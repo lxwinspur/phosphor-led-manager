@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <iostream>
 #include <string>
 namespace phosphor
@@ -250,47 +251,39 @@ void Manager::populateObjectMap()
     return;
 }
 
-void Manager::setLampTestStatus()
-{
-    this->lampTestStatus = true;
-}
-
 bool Manager::getLampTestStatus()
 {
     return this->lampTestStatus;
 }
 
-void Manager::emitLampTestInitiatedSignal()
+void Manager::lampTestHandler(sdbusplus::message::message& /*msg*/)
 {
-    using namespace sdbusplus::bus::match::rules;
+    // constexpr auto LAMP_TEST_TIMEOUT_SECS = std::chrono::seconds(4 * 60);
 
-    using PropertyValue = std::variant<bool, std::string>;
-    using DbusProp = std::string;
-    using DbusChangedProps = std::map<DbusProp, PropertyValue>;
+    // timer.restart(LAMP_TEST_TIMEOUT_SECS);
+
+    this->lampTestStatus = true;
+}
+
+void Manager::lampTestTimeout()
+{
+    // resotre
+}
+
+void Manager::lampTestInitiated()
+{
+    namespace sdbusRule = sdbusplus::bus::match::rules;
 
     constexpr auto LAMP_OBJECT_PATH = "/xyz/openbmc_project/Led";
     constexpr auto LAMP_IFACE = "xyz.openbmc_project.Led.LampTest";
     constexpr auto LAMP_SIGNAL = "LampTestInitiated";
 
-    // Signal indicating that the Lamp test has been initiated
-    try
-    {
-        auto msg = bus.new_signal(LAMP_OBJECT_PATH, LAMP_IFACE, LAMP_SIGNAL);
-        msg.signal_send();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << "Error emitting lamp test signal:"
-                  << "ERROR=" << e.what() << "\n";
-        return;
-    }
-
-    auto lampTestMatch = std::make_unique<sdbusplus::bus::match::match>(
+    auto lampTestMatch = std::make_unique<sdbusplus::bus::match_t>(
         bus,
         sdbusRule::type::signal() + sdbusRule::member(LAMP_SIGNAL) +
             sdbusRule::path(LAMP_OBJECT_PATH) +
             sdbusRule::interface(LAMP_IFACE),
-        std::bind(std::mem_fn(&Manager::setLampTestStatus), this,
+        std::bind(std::mem_fn(&Manager::lampTestHandler), this,
                   std::placeholders::_1));
 }
 
