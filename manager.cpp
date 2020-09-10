@@ -258,9 +258,9 @@ bool Manager::getLampTestStatus()
 
 void Manager::lampTestHandler(sdbusplus::message::message& /*msg*/)
 {
-    // constexpr auto LAMP_TEST_TIMEOUT_SECS = std::chrono::seconds(4 * 60);
+    constexpr auto LAMP_TEST_TIMEOUT_SECS = std::chrono::seconds(4 * 60);
 
-    // timer.restart(LAMP_TEST_TIMEOUT_SECS);
+    timer.restart(LAMP_TEST_TIMEOUT_SECS);
 
     this->lampTestStatus = true;
 }
