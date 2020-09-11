@@ -15,13 +15,19 @@ led-gen.hpp: ${srcdir}/parse_led.py
 	$(AM_V)@LEDGEN@ > $@
 endif
 
+
+
 phosphor_ledmanager_LDFLAGS = $(SDBUSPLUS_LIBS) \
-                              $(SDEVENTPLUS_LIBS) \
                               $(PHOSPHOR_LOGGING_LIBS) \
                               $(PHOSPHOR_DBUS_INTERFACES_LIBS)
 phosphor_ledmanager_CFLAGS =  $(SDBUSPLUS_CFLAGS) \
-                              $(SDEVENTPLUS_LIBS) \
                               $(PHOSPHOR_LOGGING_CFLAGS) \
                               $(PHOSPHOR_DBUS_INTERFACES_CFLAGS)
+
+if WANTS_LAMPTEST
+phosphor_ledmanager_SOURCES += lampTest.cpp
+phosphor_ledmanager_LDFLAGS += $(SDEVENTPLUS_LIBS)
+phosphor_ledmanager_CFLAGS += $(SDEVENTPLUS_CFLAGS)
+endif
 
 SUBDIRS = test fault-monitor

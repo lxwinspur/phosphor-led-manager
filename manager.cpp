@@ -5,7 +5,6 @@
 #include <xyz/openbmc_project/Led/Physical/server.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <chrono>
 #include <iostream>
 #include <string>
@@ -256,35 +255,9 @@ bool Manager::getLampTestStatus()
     return this->lampTestStatus;
 }
 
-void Manager::lampTestHandler(sdbusplus::message::message& /*msg*/)
+void Manager::setLampTestStatus(bool status)
 {
-    constexpr auto LAMP_TEST_TIMEOUT_SECS = std::chrono::seconds(4 * 60);
-
-    timer.restart(LAMP_TEST_TIMEOUT_SECS);
-
-    this->lampTestStatus = true;
-}
-
-void Manager::lampTestTimeout()
-{
-    // resotre
-}
-
-void Manager::lampTestInitiated()
-{
-    namespace sdbusRule = sdbusplus::bus::match::rules;
-
-    constexpr auto LAMP_OBJECT_PATH = "/xyz/openbmc_project/Led";
-    constexpr auto LAMP_IFACE = "xyz.openbmc_project.Led.LampTest";
-    constexpr auto LAMP_SIGNAL = "LampTestInitiated";
-
-    auto lampTestMatch = std::make_unique<sdbusplus::bus::match_t>(
-        bus,
-        sdbusRule::type::signal() + sdbusRule::member(LAMP_SIGNAL) +
-            sdbusRule::path(LAMP_OBJECT_PATH) +
-            sdbusRule::interface(LAMP_IFACE),
-        std::bind(std::mem_fn(&Manager::lampTestHandler), this,
-                  std::placeholders::_1));
+    this->lampTestStatus = status;
 }
 
 } // namespace led

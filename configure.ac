@@ -87,8 +87,9 @@ AS_IF([test "x$enable_use_json" == "xyes"],
 # enable lamp test configuration
 AC_ARG_ENABLE([use-lampTest],
     AS_HELP_STRING([--enable-use-lampTest], [Enable lamp test configuration.]))
+AM_CONDITIONAL([WANTS_LAMPTEST], [test "x$enable_use_lampTest" == "xyes"])
 AS_IF([test "x$enable_use_lampTest" == "xyes"],
-    AC_DEFINE([LAMP_TEST],[],[Enable lamp test configuration.])
+    AC_DEFINE([USE_LAMP_TEST],[],[Enable lamp test configuration.])
 )
 
 # Path of file for storing the names of asserted groups

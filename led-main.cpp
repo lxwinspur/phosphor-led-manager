@@ -9,6 +9,9 @@
 #include "ledlayout.hpp"
 #include "manager.hpp"
 #include "serialize.hpp"
+#ifdef USE_LAMP_TEST
+#include "lamp-test.hpp"
+#endif
 
 #include <iostream>
 
@@ -25,7 +28,7 @@ int main(void)
     phosphor::led::Serialize serialize(SAVED_GROUPS_FILE);
 
     /** @brief Group manager object */
-    phosphor::led::Manager manager(bus, systemLedMap, &serialize);
+    phosphor::led::Manager manager(bus, systemLedMap);
 
     /** @brief sd_bus object manager */
     sdbusplus::server::manager::manager objManager(bus, OBJPATH);
@@ -39,6 +42,10 @@ int main(void)
         groups.emplace_back(std::make_unique<phosphor::led::Group>(
             bus, grp.first, manager, serialize));
     }
+
+#ifdef USE_LAMP_TEST
+    phosphor::led::LampTest lampTest(bus, manager, serialize);
+#endif
 
     /** @brief Claim the bus */
     bus.request_name(BUSNAME);

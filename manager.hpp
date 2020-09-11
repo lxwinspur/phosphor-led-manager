@@ -1,11 +1,8 @@
 #pragma once
 
 #include "ledlayout.hpp"
-#include "serialize.hpp"
 
 #include <sdbusplus/bus.hpp>
-#include <sdeventplus/event.hpp>
-#include <sdeventplus/utility/timer.hpp>
 
 #include <map>
 #include <set>
@@ -83,18 +80,11 @@ class Manager
      *
      *  @param [in] bus       - sdbusplus handler
      *  @param [in] LedLayout - LEDs group layout
-     *  @param [in] serialize - Serialize object
      */
-    Manager(sdbusplus::bus::bus& bus, const LedLayout& ledLayout,
-            Serialize* serialize = NULL) :
-        ledMap(ledLayout),
-        bus(bus), lampTestStatus(false), serialize(serialize),
-        event(sdeventplus::Event::get_default()),
-        timer(event, std::bind(&Manager::lampTestTimeout, this))
+    Manager(sdbusplus::bus::bus& bus, const LedLayout& ledLayout) :
+        ledMap(ledLayout), bus(bus), lampTestStatus(false)
     {
-#ifdef LAMP_TEST
-        lampTestInitiated();
-#endif
+        // Nothing here
     }
 
     /** @brief Given a group name, applies the action on the group
@@ -123,21 +113,26 @@ class Manager
     /** @brief Get lamp test status, ture: On, false: Off */
     bool getLampTestStatus();
 
+    /** @brief Set lamp test status, ture: On, false: Off */
+    void setLampTestStatus(bool status);
+
+    /** @brief Chooses appropriate action to be triggered on physical LED
+     *  and calls into function that applies the actual action.
+     *
+     *  @param[in]  objPath   -  dbus object path
+     *  @param[in]  action    -  Intended action to be triggered
+     *  @param[in]  dutyOn    -  Duty Cycle ON percentage
+     *  @param[in]  period    -  Time taken for one blink cycle
+     */
+    void drivePhysicalLED(const std::string& objPath, Layout::Action action,
+                          uint8_t dutyOn, const uint16_t period);
+
   private:
     /** @brief sdbusplus handler */
     sdbusplus::bus::bus& bus;
 
     /** @brief lamp test status, ture: On, false: Off(default) */
     bool lampTestStatus;
-
-    /** @brief The serialize class for storing and restoring groups of LEDs */
-    Serialize* serialize;
-
-    /** @brief sdbusplus event */
-    const sdeventplus::Event& event;
-
-    /** @brief Timer used for host transition with seconds */
-    sdeventplus::utility::Timer<sdeventplus::ClockId::RealTime> timer;
 
     /** Map of physical LED path to service name */
     std::map<std::string, std::string> phyLeds{};
@@ -160,17 +155,6 @@ class Manager
      *  @return string equivalent of the passed in enumeration
      */
     static std::string getPhysicalAction(Layout::Action action);
-
-    /** @brief Chooses appropriate action to be triggered on physical LED
-     *  and calls into function that applies the actual action.
-     *
-     *  @param[in]  objPath   -  dbus object path
-     *  @param[in]  action    -  Intended action to be triggered
-     *  @param[in]  dutyOn    -  Duty Cycle ON percentage
-     *  @param[in]  period    -  Time taken for one blink cycle
-     */
-    void drivePhysicalLED(const std::string& objPath, Layout::Action action,
-                          uint8_t dutyOn, const uint16_t period);
 
     /** @brief Makes a dbus call to a passed in service name.
      *  This is now the physical LED controller
@@ -201,15 +185,6 @@ class Manager
 
     /** @brief Populates map of Physical LED paths to service name */
     void populateObjectMap();
-
-    /** @brief  Call back the restore function when timeout. */
-    void lampTestTimeout();
-
-    /** @brief The handler method of lamp test */
-    void lampTestHandler(sdbusplus::message::message& msg);
-
-    /** @brief Subscribe Lamp test initiated signal */
-    void lampTestInitiated();
 };
 
 } // namespace led

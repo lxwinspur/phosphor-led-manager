@@ -20,11 +20,11 @@ bool Group::asserted(bool value)
     // validation.
     auto result = manager.setGroupState(path, value, ledsAssert, ledsDeAssert);
 
+    // Store asserted state
+    serialize.storeGroups(path, result);
+
     if (!manager.getLampTestStatus())
     {
-        // Store asserted state
-        serialize.storeGroups(path, result);
-
         // If something does not go right here, then there should be an
         // sdbusplus exception thrown.
         manager.driveLEDs(ledsAssert, ledsDeAssert);
