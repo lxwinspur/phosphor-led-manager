@@ -18,6 +18,9 @@
 
 int main(void)
 {
+    // Get a default event loop
+    auto event = sdeventplus::Event::get_default();
+
     /** @brief Dbus constructs used by LED Group manager */
     sdbusplus::bus::bus bus = sdbusplus::bus::new_default();
 
@@ -46,9 +49,6 @@ int main(void)
     }
 
 #ifdef USE_LAMP_TEST
-    // Get a default event loop
-    auto event = sdeventplus::Event::get_default();
-
     phosphor::led::LampTest lampTest(bus, event, manager, serialize,
                                      std::move(groups));
 #endif
@@ -56,20 +56,9 @@ int main(void)
     /** @brief Claim the bus */
     bus.request_name(BUSNAME);
 
-#ifdef USE_LAMP_TEST
     // Attach the bus to sd_event to service user requests
     bus.attach_event(event.get(), SD_EVENT_PRIORITY_NORMAL);
-
     event.loop();
-#else
-    /** @brief Wait for client requests */
-    while (true)
-    {
-        /** @brief process dbus calls / signals discarding unhandled */
-        bus.process_discard();
-        bus.wait();
-    }
-#endif
 
     return 0;
 }
