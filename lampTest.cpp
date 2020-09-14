@@ -3,7 +3,6 @@
 #include "lampTest.hpp"
 
 #include <phosphor-logging/elog.hpp>
-#include <sdbusplus/server.hpp>
 
 namespace phosphor
 {
@@ -58,18 +57,12 @@ ObjectPaths LampTest::getLedGroupPahts()
 
 void LampTest::setAssertedStatus(const std::string& path, bool status)
 {
-    constexpr auto LED_BUSNAME = "xyz.openbmc_project.LED.GroupManager";
-    constexpr auto LED_IFACE = "xyz.openbmc_project.Led.Group";
-
-    std::variant<bool> value = status;
-
-    auto method = bus.new_method_call(LED_BUSNAME, path.c_str(),
-                                      DBUS_PROPERTY_IFACE, "Set");
-    method.append(LED_IFACE);
-    method.append("Asserted");
-    method.append(value);
-
-    bus.call_noreply(method);
+    auto iter = groups.find(path);
+    if (iter != groups.end())
+    {
+        const auto& group = iter->second;
+        group->asserted(status);
+    }
 }
 
 void LampTest::updatePhysicalAction()
@@ -95,6 +88,8 @@ void LampTest::lampTestHandler(sdbusplus::message::message& /*msg*/)
 
 void LampTest::lampTestTimeout()
 {
+    timer.setEnabled(false);
+
     // lamptest is not running and call the restore function
     manager.setLampTestStatus(false);
 
@@ -116,23 +111,6 @@ void LampTest::lampTestTimeout()
             setAssertedStatus(group, false);
         }
     }
-}
-
-void LampTest::lampTestInitiated()
-{
-    namespace sdbusRule = sdbusplus::bus::match::rules;
-
-    constexpr auto LAMP_OBJECT_PATH = "/xyz/openbmc_project/Led";
-    constexpr auto LAMP_IFACE = "xyz.openbmc_project.Led.LampTest";
-    constexpr auto LAMP_SIGNAL = "LampTestInitiated";
-
-    auto lampTestMatch = std::make_unique<sdbusplus::bus::match_t>(
-        bus,
-        sdbusRule::type::signal() + sdbusRule::member(LAMP_SIGNAL) +
-            sdbusRule::path(LAMP_OBJECT_PATH) +
-            sdbusRule::interface(LAMP_IFACE),
-        std::bind(std::mem_fn(&LampTest::lampTestHandler), this,
-                  std::placeholders::_1));
 }
 
 } // namespace led

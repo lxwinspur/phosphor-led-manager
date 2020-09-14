@@ -113,7 +113,10 @@ class Manager
     /** @brief Get lamp test status, ture: On, false: Off */
     bool getLampTestStatus();
 
-    /** @brief Set lamp test status, ture: On, false: Off */
+    /** @brief Set lamp test status
+     *
+     *  @param[in]  status  -  ture: On, false: Off
+     */
     void setLampTestStatus(bool status);
 
     /** @brief Chooses appropriate action to be triggered on physical LED

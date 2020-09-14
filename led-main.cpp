@@ -10,10 +10,11 @@
 #include "manager.hpp"
 #include "serialize.hpp"
 #ifdef USE_LAMP_TEST
-#include "lamp-test.hpp"
+#include "lampTest.hpp"
 #endif
 
-#include <iostream>
+#include <sdbusplus/server.hpp>
+#include <sdeventplus/event.hpp>
 
 int main(void)
 {
@@ -33,23 +34,34 @@ int main(void)
     /** @brief sd_bus object manager */
     sdbusplus::server::manager::manager objManager(bus, OBJPATH);
 
-    /** @brief vector of led groups */
-    std::vector<std::unique_ptr<phosphor::led::Group>> groups;
+    /** @brief map of led groups */
+    std::map<std::string, std::unique_ptr<phosphor::led::Group>> groups;
 
     /** Now create so many dbus objects as there are groups */
     for (auto& grp : systemLedMap)
     {
-        groups.emplace_back(std::make_unique<phosphor::led::Group>(
-            bus, grp.first, manager, serialize));
+        groups.emplace(grp.first,
+                       std::move(std::make_unique<phosphor::led::Group>(
+                           bus, grp.first, manager, serialize)));
     }
 
 #ifdef USE_LAMP_TEST
-    phosphor::led::LampTest lampTest(bus, manager, serialize);
+    // Get a default event loop
+    auto event = sdeventplus::Event::get_default();
+
+    phosphor::led::LampTest lampTest(bus, event, manager, serialize,
+                                     std::move(groups));
 #endif
 
     /** @brief Claim the bus */
     bus.request_name(BUSNAME);
 
+#ifdef USE_LAMP_TEST
+    // Attach the bus to sd_event to service user requests
+    bus.attach_event(event.get(), SD_EVENT_PRIORITY_NORMAL);
+
+    event.loop();
+#else
     /** @brief Wait for client requests */
     while (true)
     {
@@ -57,5 +69,7 @@ int main(void)
         bus.process_discard();
         bus.wait();
     }
+#endif
+
     return 0;
 }

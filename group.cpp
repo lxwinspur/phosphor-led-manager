@@ -3,6 +3,7 @@
 #include "group.hpp"
 
 #include <sdbusplus/message.hpp>
+
 namespace phosphor
 {
 namespace led
