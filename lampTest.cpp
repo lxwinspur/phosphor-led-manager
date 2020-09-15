@@ -74,7 +74,7 @@ void LampTest::updatePhysicalAction()
     }
 }
 
-void LampTest::lampTestHandler(sdbusplus::message::message& /*msg*/)
+void LampTest::testHandler()
 {
     constexpr auto LAMP_TEST_TIMEOUT_SECS = std::chrono::seconds(4 * 60);
 

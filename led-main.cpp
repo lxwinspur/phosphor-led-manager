@@ -6,12 +6,10 @@
 #else
 #include "led-gen.hpp"
 #endif
+#include "ledEvents.hpp"
 #include "ledlayout.hpp"
 #include "manager.hpp"
 #include "serialize.hpp"
-#ifdef USE_LAMP_TEST
-#include "lampTest.hpp"
-#endif
 
 #include <sdbusplus/server.hpp>
 #include <sdeventplus/event.hpp>
@@ -48,10 +46,8 @@ int main(void)
                            bus, grp.first, manager, serialize)));
     }
 
-#ifdef USE_LAMP_TEST
-    phosphor::led::LampTest lampTest(bus, event, manager, serialize,
-                                     std::move(groups));
-#endif
+    phosphor::led::LedEvents ledEvents(bus, event, manager, serialize,
+                                       std::move(groups));
 
     /** @brief Claim the bus */
     bus.request_name(BUSNAME);

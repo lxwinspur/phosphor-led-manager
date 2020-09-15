@@ -1,6 +1,7 @@
 #pragma once
 
 #include "group.hpp"
+#include "ledCommon.hpp"
 #include "manager.hpp"
 #include "serialize.hpp"
 
@@ -14,14 +15,13 @@ namespace phosphor
 {
 namespace led
 {
-namespace sdbusRule = sdbusplus::bus::match::rules;
 
 using ObjectPaths = std::vector<std::string>;
 
 /** @class LampTest
  *  @brief Initiate a Lamp Test request
  */
-class LampTest
+class LampTest : public TestInterfaces
 {
   public:
     LampTest() = delete;
@@ -42,48 +42,21 @@ class LampTest
         sdbusplus::bus::bus& bus, const sdeventplus::Event& event,
         Manager& manager, Serialize& serialize,
         std::map<std::string, std::unique_ptr<phosphor::led::Group>> groups) :
-        bus(bus),
-        event(event), manager(manager), serialize(serialize),
-        timer(event, std::bind(&LampTest::lampTestTimeout, this)),
-        systemdSignals(
-            bus,
-            sdbusRule::type::signal() + sdbusRule::member("LampTestInitiated") +
-                sdbusRule::path("/xyz/openbmc_project/led/xxx") +
-                sdbusRule::interface("xyz.openbmc_project.Led.LampTest"),
-            std::bind(&LampTest::lampTestHandler, this, std::placeholders::_1)),
-        groups(std::move(groups))
-    {}
+        TestInterfaces(bus, event, manager, serialize, std::move(groups)),
+        timer(event, std::bind(&LampTest::lampTestTimeout, this))
+    {
+        testHandler();
+    }
+
+    /** @brief The handler method of lamp test */
+    void testHandler() override;
 
   private:
-    /** @brief sdbusplus handler */
-    sdbusplus::bus::bus& bus;
-
-    /** @brief sdbusplus event */
-    const sdeventplus::Event& event;
-
-    /** @brief Reference to Manager object */
-    Manager& manager;
-
-    /** @brief The serialize class for storing and restoring groups of LEDs */
-    Serialize& serialize;
-
     /** @brief Timer used for host transition with seconds */
     sdeventplus::utility::Timer<sdeventplus::ClockId::RealTime> timer;
 
-    /** @brief Used to subscribe to dbus systemd signals */
-    sdbusplus::bus::match_t systemdSignals;
-
-    /** @brief map of led groups */
-    std::map<std::string, std::unique_ptr<phosphor::led::Group>> groups;
-
     /** @brief  Call back the restore function when timeout. */
     void lampTestTimeout();
-
-    /** @brief The handler method of lamp test
-     *
-     *  @param[in] msg - bus message
-     */
-    void lampTestHandler(sdbusplus::message::message& msg);
 
     /** @brief Set all the physical action to On for lamp test */
     void updatePhysicalAction();
