@@ -6,7 +6,6 @@
 #endif
 #include "ledCommon.hpp"
 #include "manager.hpp"
-#include "serialize.hpp"
 
 #include <sdeventplus/event.hpp>
 
@@ -35,16 +34,11 @@ class LedEvents
      *
      * @param[in] bus     - Handle to system dbus
      * @param[in] manager - Reference to Manager
-     * @param[in] serialize - Serialize object for lamp test
-     * @param[in] groups - map of led groups
      */
-    LedEvents(
-        sdbusplus::bus::bus& bus, const sdeventplus::Event& event,
-        Manager& manager, Serialize& serialize,
-        std::map<std::string, std::unique_ptr<phosphor::led::Group>> groups) :
+    LedEvents(sdbusplus::bus::bus& bus, const sdeventplus::Event& event,
+              Manager& manager) :
         bus(bus),
-        event(event), manager(manager), serialize(serialize),
-        groups(std::move(groups))
+        event(event), manager(manager)
     {
         initSignals();
     }
@@ -58,12 +52,6 @@ class LedEvents
 
     /** @brief Reference to Manager object */
     Manager& manager;
-
-    /** @brief The serialize class for storing and restoring groups of LEDs */
-    Serialize& serialize;
-
-    /** @brief map of led groups */
-    std::map<std::string, std::unique_ptr<phosphor::led::Group>> groups;
 
     /** @brief Used to subscribe to dbus systemd signals */
     std::vector<sdbusplus::bus::match_t> systemdSignals;

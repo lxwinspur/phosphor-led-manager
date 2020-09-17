@@ -25,8 +25,7 @@ void LedEvents::addLampTestSignals()
 void LedEvents::lampTestHandler(sdbusplus::message::message& /*msg*/)
 {
 #ifdef USE_LAMP_TEST
-    testInterfaces.push_back(std::make_unique<LampTest>(
-        bus, event, manager, serialize, std::move(groups)));
+    testInterfaces.push_back(std::make_unique<LampTest>(bus, event, manager));
 #endif
 }
 

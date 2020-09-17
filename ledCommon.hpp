@@ -20,13 +20,10 @@ namespace led
 class TestInterfaces
 {
   public:
-    explicit TestInterfaces(
-        sdbusplus::bus::bus& bus, const sdeventplus::Event& event,
-        Manager& manager, Serialize& serialize,
-        std::map<std::string, std::unique_ptr<phosphor::led::Group>> groups) :
+    explicit TestInterfaces(sdbusplus::bus::bus& bus,
+                            const sdeventplus::Event& event, Manager& manager) :
         bus(bus),
-        event(event), manager(manager), serialize(serialize),
-        groups(std::move(groups))
+        event(event), manager(manager)
     {}
 
     virtual ~TestInterfaces() = default;
@@ -42,12 +39,6 @@ class TestInterfaces
 
     /** @brief Reference to Manager object */
     Manager& manager;
-
-    /** @brief The serialize class for storing and restoring groups of LEDs */
-    Serialize& serialize;
-
-    /** @brief map of led groups */
-    std::map<std::string, std::unique_ptr<phosphor::led::Group>> groups;
 };
 
 } // namespace led

@@ -30,24 +30,22 @@ int main(void)
     phosphor::led::Serialize serialize(SAVED_GROUPS_FILE);
 
     /** @brief Group manager object */
-    phosphor::led::Manager manager(bus, systemLedMap);
+    phosphor::led::Manager manager(bus, systemLedMap, serialize);
 
     /** @brief sd_bus object manager */
     sdbusplus::server::manager::manager objManager(bus, OBJPATH);
 
-    /** @brief map of led groups */
-    std::map<std::string, std::unique_ptr<phosphor::led::Group>> groups;
+    /** @brief vector of led groups */
+    std::vector<std::unique_ptr<phosphor::led::Group>> groups;
 
     /** Now create so many dbus objects as there are groups */
     for (auto& grp : systemLedMap)
     {
-        groups.emplace(grp.first,
-                       std::move(std::make_unique<phosphor::led::Group>(
-                           bus, grp.first, manager, serialize)));
+        groups.emplace_back(std::make_unique<phosphor::led::Group>(
+            bus, grp.first, manager, serialize));
     }
 
-    phosphor::led::LedEvents ledEvents(bus, event, manager, serialize,
-                                       std::move(groups));
+    phosphor::led::LedEvents ledEvents(bus, event, manager);
 
     /** @brief Claim the bus */
     bus.request_name(BUSNAME);
